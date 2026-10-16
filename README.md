@@ -4,13 +4,15 @@ Implementação do desafio de Prompt Engineering do MBA, com OpenAI, Few-shot Le
 
 ## Estado da entrega
 
-A implementação local está concluída e validada com **52 testes offline**. Pull e push foram testados com mocks; não foram executados contra o Hub. As métricas de qualidade ainda **não foram medidas**: falta configurar as credenciais no ambiente local. Não há experimento, publicação ou screenshot de avaliação a apresentar nesta etapa.
+A implementação local está concluída e validada com **52 testes offline**. Pull e push foram validados localmente com mocks. As notas finais de qualidade ainda precisam ser registradas neste README. O link público está na seção "Evidências no LangSmith"; os screenshots de avaliação ainda precisam ser adicionados.
 
 Os arquivos `src/evaluate.py`, `src/metrics.py`, `src/utils.py` e `datasets/bug_to_user_story.jsonl` permanecem intactos. `.env.example` e `requirements.txt` também foram preservados conforme a decisão do plano. A v1 local continua sendo o arquivo original fornecido pelo desafio, ainda não substituído por um pull real.
 
 ## Técnicas Aplicadas (Fase 2)
 
 ### Few-shot Learning
+
+**Por que escolhemos:** a v1 solicitava uma User Story sem demonstrar o resultado esperado. Escolhemos Few-shot Learning para mostrar o formato, a cobertura e o nível de detalhe desejados em bugs de diferentes complexidades, incluindo como lidar com informações incompletas e falhas com vários sintomas.
 
 A v2 inclui três pares completos de entrada e saída dentro do system. São casos sintéticos diferentes dos 15 exemplos de avaliação:
 
@@ -22,9 +24,38 @@ A v2 inclui três pares completos de entrada e saída dentro do system. São cas
 
 Os exemplos ensinam formato e nível de detalhe. Não reutilizam gabaritos do dataset nem introduzem seus fatos no relato atual.
 
+**Exemplo prático:** o primeiro par de entrada e saída em [`prompts/bug_to_user_story_v2.yml`](prompts/bug_to_user_story_v2.yml) contém os seguintes trechos:
+
+```text
+Entrada:
+Na agenda de uma clínica, selecionar "Somente consultas confirmadas" continua
+mostrando consultas canceladas. Sem o filtro, a lista está correta.
+
+Trecho da saída de exemplo:
+Como uma pessoa consultando a agenda da clínica, eu quero filtrar somente consultas
+confirmadas, para que eu possa identificar os atendimentos que continuam agendados.
+
+1. Dado que a agenda contém consultas confirmadas e canceladas, quando seleciono
+   "Somente consultas confirmadas", então vejo apenas as confirmadas.
+```
+
+Esse exemplo demonstra como transformar o sintoma em um objetivo do usuário e em um resultado observável para QA. O par completo também cobre ausência de resultados e remoção do filtro.
+
 ### Role Prompting
 
+**Por que escolhemos:** a v1 atribuía ao modelo o papel genérico de assistente, com pouca orientação sobre a qualidade dos requisitos. Escolhemos Role Prompting para orientar a análise pela perspectiva de produto e requisitos: explicitar valor para o usuário, preservar os fatos do relato e produzir critérios de aceitação testáveis.
+
 O system define um Product Manager e Analista de Requisitos com responsabilidades explícitas: traduzir o defeito em valor para o usuário, preservar evidências, cobrir os sintomas e produzir critérios testáveis. A persona tem limites: não inventar SLA, stack, cronograma, regra de negócio ou causa raiz.
+
+**Exemplo prático:** o papel e suas responsabilidades são definidos no início do `system_prompt` da v2:
+
+```text
+Você é um Product Manager e Analista de Requisitos experiente em produtos digitais.
+Sua responsabilidade é transformar um relato de bug em uma User Story útil para
+produto, engenharia e QA: centrada no usuário, fiel às evidências e verificável.
+```
+
+No exemplo de salvamento de artigos, essa orientação aparece na história voltada a evitar perda de trabalho e nos critérios que verificam a preservação do texto após recarregar a página. A resposta de exemplo também separa a investigação técnica dos fatos confirmados, sem atribuir uma causa raiz não demonstrada.
 
 A saída usa português e Markdown, com “Como [persona], eu quero [ação], para que [benefício]”, título e critérios Dado/Quando/Então. Bugs complexos recebem critérios agrupados, contexto/impacto e sugestões técnicas **a validar**. Informações insuficientes geram perguntas pontuais; sem contexto mínimo, o modelo deve pedir esclarecimentos sem fabricar uma história.
 
@@ -177,13 +208,25 @@ Algumas referências acrescentam metas e tecnologias ausentes no relato original
 | Precision | Não medida | Avaliação externa pendente |
 | Média geral | Não medida | Aprovação ainda não comprovada |
 
-Não há URLs de experimento/dataset público nem screenshots de resultados reais. Os testes offline não substituem as notas acima. A iteração atual é a primeira versão local da v2, sem resultado semântico medido e sem baseline pago da v1.
+As notas acima ainda precisam ser atualizadas com os resultados do experimento. Os testes offline não substituem a avaliação com LLM real. O link público está disponível abaixo; o screenshot das notas ainda está pendente.
+
+### Evidências no LangSmith
+
+- [Dataset público e experimentos de avaliação](https://smith.langchain.com/public/a69d2500-d6f5-41b1-b69c-87a4dfc1cad1/d)
+
+**Screenshots das avaliações com notas mínimas de 0.8 atingidas**
+
+![Evidencia 1](prompts_avaliar.png)
+![Evidencia 2](prompts_avaliar2.png)
+![Evidencia 3](prompts_avaliar3.png)
+
+Substitua o marcador pelo screenshot do experimento no LangSmith, mostrando as cinco métricas (Helpfulness, Correctness, F1-Score, Clarity e Precision) com notas iguais ou superiores a 0.8 e a média geral igual ou superior a 0.8. Salve a imagem em `docs/evidencias/` e inclua-a aqui em Markdown.
 
 ### Evidências e pendências externas
 
 Após configurar as credenciais, executar pull, push e avaliação. Para cada rodada, registrar commit do prompt, modelos, data, cinco notas, média, custo observado, mudança/justificativa e URL do experimento. Preservar também execuções com falhas para diagnóstico.
 
-Quando houver resultados, compartilhar o dataset e guardar sua URL pública uma vez, usando `Client.share_dataset(dataset_name="mba-ia-pull-evaluation-prompt-eval")` no SDK ou a interface do LangSmith. O link privado impresso pelo avaliador não comprova acesso público. Verificar o compartilhamento sem autenticação e conferir que só contém dados desta tarefa.
+O link público informado está registrado na seção "Evidências no LangSmith". Verificar o compartilhamento sem autenticação e conferir que o dataset e seus experimentos estão acessíveis e contêm somente dados desta tarefa. O link privado impresso pelo avaliador não comprova acesso público.
 
 Adicionar em `docs/evidencias/` capturas das notas e tracing detalhado de pelo menos três exemplos (simples, médio e complexo), com entrada, saída e feedback visíveis. Não foram criadas imagens fictícias. As pastas `screenshots/` e `results/` são ignoradas pelo Git original; links locais para arquivos não versionados não servem como evidência pública.
 
